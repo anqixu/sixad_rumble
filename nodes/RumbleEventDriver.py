@@ -29,9 +29,7 @@ class RumbleEventDriver:
   def initRumble(self, dev, strongMag=0xFF, weakMag=0x00, durationMS=5000, delayMS=0):
     # Open device
     self.termRumble()
-    self.rumble_fd = open(dev, "rw") # raises IOError if dev file cannot be opened
-    print 'Opened event file: ' + dev
-    print self.rumble_fd
+    self.rumble_fd = open(dev, "r+") # raises IOError if dev file cannot be opened
     
     # Set and upload feedback effect ('struct ff_effect' from "linux/input.h")
     self.rumble_effect = struct.pack('HhHHHHHxxHH',
@@ -59,7 +57,7 @@ class RumbleEventDriver:
   def termRumble(self):
     if self.rumble_fd is not None:
       self.setRumble(False)
-      close(self.rumble_fd)
+      self.rumble_fd.close()
     self.rumble_fd = None
     self.rumble_effect = None
     self.rumble_effect_array = None

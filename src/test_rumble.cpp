@@ -25,7 +25,7 @@ int main(int argc, char** argv) {
     return EXIT_FAILURE;
   }
   printf("Device %s opened\n", device_file_name);
-
+  
 
   // Prompt for user input
   do {
