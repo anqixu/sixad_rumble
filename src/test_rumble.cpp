@@ -7,7 +7,7 @@
 int main(int argc, char** argv) {
   // Parse event device argument
   int i;
-  const char* device_file_name = "/dev/input/event0";
+  const char* device_file_name = "/dev/input/gamepads/event_dft";
   for (i = 1; i < argc; i++) {
     if (strncmp(argv[i], "--help", 64) == 0) {
       printf("Usage: %s /dev/input/eventXX\n", argv[0]);

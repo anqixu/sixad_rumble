@@ -81,7 +81,7 @@ class RumbleEventDriver:
 
 def main():
   # Parse event device argument
-  device_file_name = "/dev/input/event0"
+  device_file_name = "/dev/input/gamepads/event_dft"
   argv = sys.argv
   for i in xrange(1, len(argv)):
     if argv[i] == "--help":
@@ -96,12 +96,15 @@ def main():
   
   # Prompt for user input
   i = 0
-  while i >= 0:
-    print ">0: rumble; 0: stop; <0: exit"
-    i = int(raw_input())
-    if i >= 0:
-      if not ps3.setRumble(i > 0):
-        return -1
+  try:
+    while i >= 0:
+      print ">0: rumble; 0: stop; <0: exit"
+      i = int(raw_input())
+      if i >= 0:
+        if not ps3.setRumble(i > 0):
+          return -1
+  except ValueError:
+    pass
 
   # Close rumble event driver
   ps3.termRumble()
