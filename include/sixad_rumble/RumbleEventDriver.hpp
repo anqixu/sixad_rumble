@@ -39,6 +39,10 @@ public:
    * @return False if failed to close file descriptor
    */
   bool termRumble();
+  
+  
+  
+  bool debugFn();
 
   
 protected:

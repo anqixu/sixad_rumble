@@ -1,14 +1,16 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(sixad_rumble)
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++0x")
+
 find_package(catkin REQUIRED COMPONENTS
-  roscpp
+  roscpp sensor_msgs
 )
 
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES sixad_rumble
-  CATKIN_DEPENDS roscpp
+#  LIBRARIES sixad_rumble
+  CATKIN_DEPENDS roscpp rospy sensor_msgs
 #  DEPENDS system_lib
 )
 
@@ -17,21 +19,7 @@ include_directories(
   include
 )
 
-add_library(${PROJECT_NAME}
-  src/RumbleEventDriver.cpp
-)
+add_executable(test_rumble src/RumbleEventDriver.cpp src/test_rumble.cpp)
 
-add_executable(test_rumble src/test_rumble.cpp)
-target_link_libraries(test_rumble ${PROJECT_NAME})
-
-install(TARGETS ${PROJECT_NAME} test_rumble
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
-
-install(DIRECTORY include/${PROJECT_NAME}/
-  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-  FILES_MATCHING PATTERN "*.h*"
-#  PATTERN ".svn" EXCLUDE
-)
+add_executable(rumble_event_node src/RumbleEventNode.cpp)
+target_link_libraries(rumble_event_node ${catkin_LIBRARIES})

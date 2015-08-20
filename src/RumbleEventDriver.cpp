@@ -70,3 +70,98 @@ bool RumbleEventDriver::termRumble() {
   }
   return true;
 };
+
+
+bool RumbleEventDriver::debugFn() {
+  if (rumble_fd < 0) return false;
+
+  struct ff_effect re;
+  struct input_event ev;
+
+  // Define+upload+trigger+remove feedback effect 1
+  memset(&re, 0, sizeof(re)); re.type = FF_RUMBLE; re.id = -1; re.replay.delay = 0;
+  re.u.rumble.strong_magnitude = ((unsigned int) 255) << 8;
+  re.u.rumble.weak_magnitude = ((unsigned int) 0) << 8;
+  re.replay.length = 3000;
+  if (ioctl(rumble_fd, EVIOCSFF, &re) == -1) {
+    perror("Upload rumble ev");
+    return false;
+  }
+  
+  memset(&ev, 0, sizeof(ev)); ev.type = EV_FF; ev.code = re.id; ev.value = true;
+  if (write(rumble_fd, (const void*) &ev, sizeof(ev)) == -1) {
+    perror("Set rumble");
+    return false;
+  }
+
+  sleep(5);
+  
+  ev.value = false;
+  if (write(rumble_fd, (const void*) &ev, sizeof(ev)) == -1) {
+    perror("Reset rumble");
+    return false;
+  }
+
+  if (ioctl(rumble_fd, EVIOCRMFF, re.id) == -1) {
+    perror("Clear rumble ev");
+    return false;
+  }
+  
+  // Define+upload+trigger+remove feedback effect 2
+  memset(&re, 0, sizeof(re)); re.type = FF_RUMBLE; re.id = -1; re.replay.delay = 0;
+  re.u.rumble.strong_magnitude = ((unsigned int) 0) << 8;
+  re.u.rumble.weak_magnitude = ((unsigned int) 255) << 8;
+  re.replay.length = 3000;
+  if (ioctl(rumble_fd, EVIOCSFF, &re) == -1) {
+    perror("Upload rumble ev");
+    return false;
+  }
+  
+  memset(&ev, 0, sizeof(ev)); ev.type = EV_FF; ev.code = re.id; ev.value = true;
+  if (write(rumble_fd, (const void*) &ev, sizeof(ev)) == -1) {
+    perror("Set rumble");
+    return false;
+  }
+
+  sleep(5);
+  
+  ev.value = false;
+  if (write(rumble_fd, (const void*) &ev, sizeof(ev)) == -1) {
+    perror("Reset rumble");
+    return false;
+  }
+
+  if (ioctl(rumble_fd, EVIOCRMFF, re.id) == -1) {
+    perror("Clear rumble ev");
+    return false;
+  }
+  
+  // Define+upload+trigger+remove feedback effect 3
+  memset(&re, 0, sizeof(re)); re.type = FF_RUMBLE; re.id = -1; re.replay.delay = 0;
+  re.u.rumble.strong_magnitude = ((unsigned int) 128) << 8;
+  re.u.rumble.weak_magnitude = ((unsigned int) 64) << 8;
+  re.replay.length = 3000;
+  if (ioctl(rumble_fd, EVIOCSFF, &re) == -1) {
+    perror("Upload rumble ev");
+    return false;
+  }
+  
+  memset(&ev, 0, sizeof(ev)); ev.type = EV_FF; ev.code = re.id; ev.value = true;
+  if (write(rumble_fd, (const void*) &ev, sizeof(ev)) == -1) {
+    perror("Set rumble");
+    return false;
+  }
+
+  sleep(5);
+  
+  ev.value = false;
+  if (write(rumble_fd, (const void*) &ev, sizeof(ev)) == -1) {
+    perror("Reset rumble");
+    return false;
+  }
+
+  if (ioctl(rumble_fd, EVIOCRMFF, re.id) == -1) {
+    perror("Clear rumble ev");
+    return false;
+  }  
+};

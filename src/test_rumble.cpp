@@ -7,24 +7,26 @@
 int main(int argc, char** argv) {
   // Parse event device argument
   int i;
-  const char* device_file_name = "/dev/input/gamepads/event_dft";
+  const char* dev = "/dev/input/gamepads/event_dft";
   for (i = 1; i < argc; i++) {
-    if (strncmp(argv[i], "--help", 64) == 0) {
-      printf("Usage: %s /dev/input/eventXX\n", argv[0]);
+    if (strncmp(argv[i], "--help", 6) == 0) {
+      printf("Usage: %s /dev/input/eventXX <strong_magn> <weak_magn>\n", argv[0]);
       return EXIT_SUCCESS;
     }
-    else {
-      device_file_name = argv[i];
-    }
   }
+  
+  unsigned char strongMag = 0xFF, weakMag = 0x00;
+  if (argc >= 2) dev = argv[1];
+  if (argc >= 3) strongMag = atoi(argv[2]);
+  if (argc >= 4) weakMag = atoi(argv[3]);
   
   RumbleEventDriver ps3;
 
   // Initialize rumble event driver
-  if (ps3.initRumble(device_file_name) < 0) {
+  if (ps3.initRumble(dev, strongMag, weakMag) < 0) {
     return EXIT_FAILURE;
   }
-  printf("Device %s opened\n", device_file_name);
+  printf("Device %s opened\n", dev);
   
 
   // Prompt for user input
@@ -34,7 +36,12 @@ int main(int argc, char** argv) {
     if (scanf("%d", &i) == EOF) {
       printf("Read error\n");
     } else if (i >= 0) {
+      /*
       if (!ps3.setRumble(i > 0)) {
+        return EXIT_FAILURE;
+      }
+      */
+      if (!ps3.debugFn()) {
         return EXIT_FAILURE;
       }
     }
