@@ -4,7 +4,7 @@
   <group ns="teleop">
     <node pkg="sixad_rumble" type="rumble_event_node" name="joy_rumble_node" output="screen">
       <param name="device" value="$(arg event_dev)" />
-      <param name="duration_sec" value="15.0" />
+      <param name="duration_sec" value="3.0" />
       <remap from="~set_rumble" to="/teleop/set_joy_rumble" />
     </node>
   </group>
