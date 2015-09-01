@@ -1,3 +1,5 @@
+#include <cerrno>
+#include <cstring>
 #include <linux/input.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
@@ -11,6 +13,7 @@ public:
       rumble_fd(-1),
       device("/usr/input/gamepads/event_dft"),
       duration_sec(5.0),
+      active(false),
       local_handle("~") {
     // Initialize internal structures
     memset(&rumble_effect, 0, sizeof(rumble_effect));
@@ -39,9 +42,11 @@ public:
     rumble_fd = open(device.c_str(), O_RDWR);
     if (rumble_fd == -1) {
       ROS_ERROR_STREAM("Failed to open " << device);
-      return false;
+      active = false;
+    } else {
+      active = true;
     }
-    return true;
+    return active;
   };
   
   
@@ -82,7 +87,9 @@ protected:
     rumble_event.code = rumble_effect.id;
     rumble_event.value = active;
     if (write(rumble_fd, (const void*) &rumble_event, sizeof(rumble_event)) == -1) {
-      ROS_ERROR_STREAM("Failed to issue rumble event");
+      ROS_ERROR_STREAM("Failed to issue rumble event: " << strerror(errno));
+      active = false;
+      termRumbleDevice();
       return;
     }
   };
@@ -97,7 +104,9 @@ protected:
       issueRumbleEvent(false);
       
       if (ioctl(rumble_fd, EVIOCRMFF, rumble_effect.id) == -1) {
-        ROS_ERROR_STREAM("Failed to clear rumble effect");
+        ROS_ERROR_STREAM("Failed to clear rumble effect: " << strerror(errno));
+        active = false;
+        termRumbleDevice();
         return;
       }
       rumble_effect.id = -1;
@@ -109,7 +118,9 @@ protected:
     rumble_effect.replay.length = std::min(std::max(durationSec, 0.0), 65.535)*1000;
     rumble_effect.replay.delay = std::min(std::max(delaySec, 0.0), 65.535)*1000;
     if (ioctl(rumble_fd, EVIOCSFF, &rumble_effect) == -1) {
-      ROS_ERROR_STREAM("Failed to upload rumble effect");
+      ROS_ERROR_STREAM("Failed to upload rumble effect: " << strerror(errno));
+      active = false;
+      termRumbleDevice();
       return;
     }
     
@@ -123,6 +134,7 @@ protected:
   struct input_event rumble_event;
   std::string device;
   double duration_sec;
+  bool active; // Used to disconnect on failure
   
   ros::NodeHandle local_handle;
   ros::Subscriber set_rumble_sub;
