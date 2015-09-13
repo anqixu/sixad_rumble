@@ -51,6 +51,8 @@ public:
   
   
   void setRumbleCB(const sensor_msgs::JoyFeedbackArray::ConstPtr& msg) {
+    if (!active) return;
+    
     double strongMagnPct = 0, weakMagnPct = 0;
     bool update = false;
     for (const sensor_msgs::JoyFeedback& f: msg->array) {
@@ -98,8 +100,37 @@ protected:
   void setRumble(double strongMagnPct, double weakMagnPct,
       double durationSec, double delaySec=0) {
     if (rumble_fd < 0) return;
-        
-    // Stop and clear previous rumble effect
+    
+    // Cap and convert arguments
+    strongMagnPct = std::min(std::max(strongMagnPct, 0.0), 1.0);
+    weakMagnPct = std::min(std::max(weakMagnPct, 0.0), 1.0);
+    durationSec = std::min(std::max(durationSec, 0.0), 65.535);
+    delaySec = std::min(std::max(delaySec, 0.0), 65.535);
+    unsigned short strong_magnitude = 65535*strongMagnPct;
+    unsigned short weak_magnitude = 65535*weakMagnPct;
+    unsigned short length = durationSec*1000;
+    unsigned short delay = delaySec*1000;
+    
+    // Option A: stop existing event
+    if (strong_magnitude == 0 && weak_magnitude == 0) {
+      if (rumble_event.value) {
+        issueRumbleEvent(false);
+      } // else already stopped event, so ignore request
+      return;
+    }
+    
+    // Option B: re-issue existing event
+    if (rumble_effect.id >= 0 &&
+        strong_magnitude == rumble_effect.u.rumble.strong_magnitude &&
+        weak_magnitude == rumble_effect.u.rumble.weak_magnitude &&
+        length == rumble_effect.replay.length &&
+        delay == rumble_effect.replay.delay) {
+      issueRumbleEvent(false);
+      issueRumbleEvent(true);
+      return;
+    }
+    
+    // Option C: stop and clear previous rumble effect ...
     if (rumble_effect.id >= 0) {
       issueRumbleEvent(false);
       
@@ -112,11 +143,11 @@ protected:
       rumble_effect.id = -1;
     }
 
-    // Upload new rumble effect
-    rumble_effect.u.rumble.strong_magnitude = 65535*std::min(std::max(strongMagnPct, 0.0), 1.0);
-    rumble_effect.u.rumble.weak_magnitude = 65535*std::min(std::max(weakMagnPct, 0.0), 1.0);
-    rumble_effect.replay.length = std::min(std::max(durationSec, 0.0), 65.535)*1000;
-    rumble_effect.replay.delay = std::min(std::max(delaySec, 0.0), 65.535)*1000;
+    // ... then upload new rumble effect...
+    rumble_effect.u.rumble.strong_magnitude = strong_magnitude;
+    rumble_effect.u.rumble.weak_magnitude = weak_magnitude;
+    rumble_effect.replay.length = length;
+    rumble_effect.replay.delay = delay;
     if (ioctl(rumble_fd, EVIOCSFF, &rumble_effect) == -1) {
       ROS_ERROR_STREAM("Failed to upload rumble effect: " << strerror(errno));
       active = false;
@@ -124,7 +155,7 @@ protected:
       return;
     }
     
-    // Start rumble
+    // ... and start rumble
     issueRumbleEvent(true);
   };
 
