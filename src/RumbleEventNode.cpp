@@ -14,6 +14,7 @@ public:
       device("/usr/input/gamepads/event_dft"),
       duration_sec(5.0),
       active(false),
+      reconnect(false),
       local_handle("~") {
     // Initialize internal structures
     memset(&rumble_effect, 0, sizeof(rumble_effect));
@@ -41,10 +42,14 @@ public:
   bool initRumbleDevice() {
     rumble_fd = open(device.c_str(), O_RDWR);
     if (rumble_fd == -1) {
-      ROS_ERROR_STREAM("Failed to open " << device);
+      if (!reconnect) {
+        ROS_ERROR_STREAM("Failed to open " << device);
+      }
       active = false;
     } else {
       active = true;
+      reconnect = false;
+      ROS_INFO_STREAM("Opened " << device);
     }
     return active;
   };
@@ -69,16 +74,33 @@ public:
   
   
   void spin() {
-    ros::spin();
+    ros::Rate hz(10);
+    while (ros::ok()) {
+      if (reconnect) {
+        ROS_INFO_STREAM("attempt reconnect");
+        initRumbleDevice();
+      }
+      ros::spinOnce();
+      hz.sleep();
+    }
   };
 
   
 protected:
-  void termRumbleDevice() {
+  void termRumbleDevice(bool forced=false) {
     if (rumble_fd >= 0) {
-      issueRumbleEvent(false); // Stop previous rumble effect
+      if (!forced) {
+        issueRumbleEvent(false); // Stop previous rumble effect
+      }
       close(rumble_fd);
+      rumble_effect.id = -1;
+      rumble_event.code = -1;
       rumble_fd = -1;
+      ROS_INFO_STREAM("Closed " << device);
+    }
+    active = false;
+    if (forced) {
+      reconnect = true;
     }
   };
   
@@ -90,8 +112,7 @@ protected:
     rumble_event.value = active;
     if (write(rumble_fd, (const void*) &rumble_event, sizeof(rumble_event)) == -1) {
       ROS_ERROR_STREAM("Failed to issue rumble event: " << strerror(errno));
-      active = false;
-      termRumbleDevice();
+      termRumbleDevice(true);
       return;
     }
   };
@@ -136,8 +157,7 @@ protected:
       
       if (ioctl(rumble_fd, EVIOCRMFF, rumble_effect.id) == -1) {
         ROS_ERROR_STREAM("Failed to clear rumble effect: " << strerror(errno));
-        active = false;
-        termRumbleDevice();
+        termRumbleDevice(true);
         return;
       }
       rumble_effect.id = -1;
@@ -150,8 +170,7 @@ protected:
     rumble_effect.replay.delay = delay;
     if (ioctl(rumble_fd, EVIOCSFF, &rumble_effect) == -1) {
       ROS_ERROR_STREAM("Failed to upload rumble effect: " << strerror(errno));
-      active = false;
-      termRumbleDevice();
+      termRumbleDevice(true);
       return;
     }
     
@@ -166,6 +185,7 @@ protected:
   std::string device;
   double duration_sec;
   bool active; // Used to disconnect on failure
+  bool reconnect;
   
   ros::NodeHandle local_handle;
   ros::Subscriber set_rumble_sub;
