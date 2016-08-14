@@ -11,7 +11,7 @@ class RumbleEventNode {
 public:
   RumbleEventNode() :
       rumble_fd(-1),
-      device("/usr/input/gamepads/event_dft"),
+      device("/dev/input/gamepads/event_dft"),
       duration_sec(5.0),
       active(false),
       reconnect(false),
