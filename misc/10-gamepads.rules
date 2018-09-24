@@ -1,5 +1,5 @@
 # 1. place this file in: /etc/udev/rules.d/
-# 2. run 'sudo reload udev'
+# 2. run 'sudo service udev restart' / 'sudo reload udev'
 # 3. connect gamepad and PROFIT!
 
 # PS3 DualShock3 USB
