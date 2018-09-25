@@ -163,5 +163,7 @@ bool RumbleEventDriver::debugFn() {
   if (ioctl(rumble_fd, EVIOCRMFF, re.id) == -1) {
     perror("Clear rumble ev");
     return false;
-  }  
+  }
+
+  return true;
 };
